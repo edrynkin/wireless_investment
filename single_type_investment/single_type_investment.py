@@ -71,7 +71,7 @@ class Demand(object):
         self.delta_q = delta_q
         
     def combine(self, p, q):
-        z = self.xi-self.alpha*p+self.beta*q + (self.beta-delta_q)*(1-q)
+        z = self.xi-self.alpha*p+self.beta*q + (self.beta-self.delta_q)*(1-q)
         return z
         
     def evaluate(self, p, q, markets):
