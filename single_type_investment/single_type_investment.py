@@ -71,7 +71,7 @@ class Demand(object):
         self.delta_q = delta_q
         
     def combine(self, p, q):
-        z = self.xi-self.alpha*p+self.beta*q
+        z = self.xi-self.alpha*p+self.beta*q + (self.beta-delta_q)*(1-q)
         return z
         
     def evaluate(self, p, q, markets):
@@ -167,7 +167,7 @@ class Model(object):
             demand = self.demands.demands_list[t]
             for m in range(M):
                 market = self.markets.markets_list[m]
-                dq = np.sum(pr_cum[t][m]*demand.delta_q*market.zipvec['pop'], axis=0)/market.pop
+                dq = np.sum(pr_cum[t][m]*market.zipvec['pop'], axis=0)/market.pop
                 self.q[t][[m],:] = self.q[0][[m],:] + dq
     
     def tr1(self, t, demand_boosts, mcs):
