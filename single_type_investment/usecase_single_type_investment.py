@@ -26,5 +26,5 @@ xi = np.zeros((M, J))
 demand = sti.Demand(alpha, beta, xi)
 demands = sti.Demands([demand]*T)
 
-model = sti.Model(markets, demands, costs, [1.8*np.ones((M, J))]*T)
+model = sti.Model(markets, demands, costs, [np.zeros((M, J))]*T)
 model.find_eqm()
