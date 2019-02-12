@@ -167,7 +167,7 @@ class Model(object):
             demand = self.demands.demands_list[t]
             for m in range(M):
                 market = self.markets.markets_list[m]
-                dq = np.sum(pr_cum[t][m]*market.zipvec['pop'], axis=0)/market.pop
+                dq = np.sum(pr_cum[t][m]*market.zipvec['pop'], axis=0, keepdims=True)/market.pop
                 self.q[t][[m],:] = self.q[0][[m],:] + dq
     
     def tr1(self, t, demand_boosts, mcs):
@@ -255,7 +255,7 @@ class Model(object):
         M = self.M
         J = self.J
         for t in range(T):
-            prob_inv_cum_iter = [None]*(T-t)
+            prob_inv_cum_iter = [None for a in range(T-t)]
             if T-t>1:
                 prob_inv_cum_iter[1] = []
                 for m in range(M):
@@ -278,7 +278,7 @@ class Model(object):
         T = self.T
         M = self.M
         J = self.J
-        prob_inv_cum = [None]*T
+        prob_inv_cum = [None for a in range(T)]
         prob_inv_cum[0] = []
         for m in range(M):
             market = self.markets.markets_list[m]
@@ -293,7 +293,7 @@ class Model(object):
                         (1 - prob_inv_cum[tau-1][m])*self.sigma[tau-1][m]
                 prob_inv_cum[tau].append(temp)    
         for t in range(T):
-            prob_inv_cum_iter = [None]*(T-t)
+            prob_inv_cum_iter = [None for a in range(T-t)]
             if T-t>1:
                 prob_inv_cum_iter[1] = []
                 for m in range(M):
