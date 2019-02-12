@@ -79,7 +79,7 @@ class Demand(object):
         Q = np.sum(sigmoid(z)*markets.pop, axis=0, keepdims=True)
         return Q
     
-    def elastisity(self, p, q, markets): # Negative(!)
+    def elastisity(self, p, q, markets): # Negative
         z = self.combine(p, q)
         s = sigmoid(z)
         Q = np.sum(sigmoid(z)*markets.pop, axis=0, keepdims=True)
@@ -111,6 +111,14 @@ class Demands(object):
     def __init__(self, demands_list):
         self.T = len(demands_list)
         self.demands_list = demands_list
+        
+    def evaluate(self, p, q, markets):
+        out = []
+        for t in range(self.T):
+            demand = self.demands_list[t]
+            e = demand.evaluate(p[t], q[t], markets)
+            out.append(e)
+        return out
     
 class Model(object):
     def __init__(self, markets, demands, costs, q_init, delta=0.92):
