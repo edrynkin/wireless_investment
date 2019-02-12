@@ -334,7 +334,7 @@ class Model(object):
             sigma_out.append(br)
         return sigma_out
     
-    def find_eqm(self, tol=1e-4):
+    def find_eqm(self, tol=1e-4, verbose=False):
         dif = 2*tol
         while dif > tol:
             self.p = self.eqm_prices()
@@ -346,4 +346,5 @@ class Model(object):
                     dif = np.maximum(dif, d)
             self.sigma = sigma
             self.update_q()
-            print(dif)
+            if verbose:
+                print(dif)
