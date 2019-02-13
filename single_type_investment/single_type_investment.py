@@ -167,7 +167,7 @@ class Model(object):
             prices.append(price)
         return prices
     
-    def update_q(self): 
+    def update_q(self, learning_rate=1): 
         T = self.T
         M = self.M
         pr_cum = self.calc_probs_eq()
@@ -176,7 +176,7 @@ class Model(object):
             for m in range(M):
                 market = self.markets.markets_list[m]
                 dq = np.sum(pr_cum[t][m]*market.zipvec['pop'], axis=0, keepdims=True)/market.pop
-                self.q[t][[m],:] = self.q[0][[m],:] + dq
+                self.q[t][[m],:] = self.q[0][[m],:] + dq*learning_rate
     
     def tr1(self, t, demand_boosts, mcs):
         delta = self.delta
@@ -334,7 +334,7 @@ class Model(object):
             sigma_out.append(br)
         return sigma_out
     
-    def find_eqm(self, tol=1e-4, verbose=False):
+    def find_eqm(self, tol=1e-4, verbose=False, learning_rate=1):
         dif = 2*tol
         while dif > tol:
             self.p = self.eqm_prices()
@@ -345,6 +345,6 @@ class Model(object):
                     d = np.max(np.abs(sigma[t][m] - self.sigma[t][m]))
                     dif = np.maximum(dif, d)
             self.sigma = sigma
-            self.update_q()
+            self.update_q(learning_rate=learning_rate)
             if verbose:
                 print(dif)
