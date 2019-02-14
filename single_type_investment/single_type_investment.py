@@ -56,6 +56,10 @@ class Cost(object):
         u = stats.norm.ppf(p)
         u = stats.norm.cdf(u - self.dynamic_pars['sigma'])/p
         return u
+    
+    def evaluate_static(self, Q):
+        C = self.static_pars['static_mc']*Q
+        return C
         
 class Costs(object):
     def __init__(self, costs_list):
@@ -107,6 +111,14 @@ class Demand(object):
             dQ.append(dQm)
         return dQ
     
+    def shares_by_market(self, p, q):
+        z = self.combine(p, q)
+        return sigmoid(z)
+    
+    def utility2money(self, u):
+        return u/self.alpha
+    
+    
 class Demands(object):
     def __init__(self, demands_list):
         self.T = len(demands_list)
@@ -118,6 +130,22 @@ class Demands(object):
             demand = self.demands_list[t]
             e = demand.evaluate(p[t], q[t], markets)
             out.append(e)
+        return out
+    
+    def combine(self, p, q):
+        out = []
+        for t in range(self.T):
+            demand = self.demands_list[t]
+            z = demand.combine(p[t], q[t])
+            out.append(z)
+        return out
+    
+    def shares_by_market(self, p, q):
+        out = []
+        for t in range(self.T):
+            demand = self.demands_list[t]
+            s = demand.shares_by_market(p[t], q[t])
+            out.append(s)
         return out
     
 class Model(object):
@@ -176,7 +204,8 @@ class Model(object):
             for m in range(M):
                 market = self.markets.markets_list[m]
                 dq = np.sum(pr_cum[t][m]*market.zipvec['pop'], axis=0, keepdims=True)/market.pop
-                self.q[t][[m],:] = self.q[0][[m],:] + dq*learning_rate
+                temp = self.q[0][[m],:] + dq
+                self.q[t][[m],:] = (1-learning_rate)*self.q[t][[m],:] + learning_rate*temp
     
     def tr1(self, t, demand_boosts, mcs):
         delta = self.delta
@@ -348,3 +377,59 @@ class Model(object):
             self.update_q(learning_rate=learning_rate)
             if verbose:
                 print(dif)
+                
+    def consumer_surplus(self):
+        out = []
+        s = self.demands.shares_by_market(self.p, self.q)
+        z = self.demands.combine(self.p, self.q)
+        for t in range(self.T):
+            u = np.log(1 + np.sum(np.exp(z[t]), axis=1, keepdims=True))
+            u = self.demands.demand_list[t].utility2money(u)
+            out.append(u)
+        return out
+
+    def static_profits(self):
+        out = []
+        s = self.demands.shares_by_market(self.p, self.q)
+        for t in range(self.T):
+            cost = self.costs.costs_list[t]
+            pi = self.p[t]*s[t]*self.markets.pop - cost.evaluate_static(s[t]*self.markets.pop)
+            out.append(pi)
+        return out
+
+    def average_price(self):
+        p = np.zeros((self.T,))
+        Q = self.demands.evaluate(self.p, self.q, self.markets)
+        for t in range(self.T):
+            s = Q[t]/np.sum(Q[t])
+            p[t] = np.sum(self.p[t]*s)
+        return p
+
+    def average_quality(self):
+        q = np.zeros((self.T,))
+        s = self.demands.shares_by_market(self.p, self.q)
+        for t in range(self.T):
+            Q = s[t]*self.markets.pop
+            q[t] = np.sum(self.q[t]*Q)/np.sum(Q)
+        return q
+
+    def mobile_penetration(self):
+        out = np.zeros((self.T,))
+        Q = self.demands.evaluate(self.p, self.q, self.markets)
+        for t in range(self.T):
+            out[t] = np.sum(Q[t])/np.sum(self.markets.pop)
+        return out
+
+    def dynamic_costs(self):
+        out = []
+        for t in range(self.T):
+            temp = np.zeros((self.M,self.J))
+            sigma = self.sigma[t]
+            cost = self.costs.costs_list[t]
+            for m in range(self.M):
+                market = self.markets.markets_list[m]
+                u = cost.p2u(sigma[m])
+                C = cost.evaluate_dynamic_base(market)
+                temp[[m],:] = np.sum(u*C, axis=0, keepdims=True)
+            out.append(temp)
+        return out
